@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0061FF;
+  --brand-light: #e8f0ff;
+  --brand-hover: #0050d4;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    font-size: 12pt;
+  }
+}

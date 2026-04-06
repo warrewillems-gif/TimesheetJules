@@ -1,0 +1,14 @@
+{
+  "name": "timesheet-tool",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "backend": "cd backend && node src/index.js",
+    "frontend": "cd frontend && npx vite",
+    "dev": "npx concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
