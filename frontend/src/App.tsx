@@ -24,8 +24,6 @@ export default function App() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLTableCellElement>(null);
 
-
-
   // Add modal state
   const [addModal, setAddModal] = useState<{ type: 'client' | 'project' | 'subproject'; parentId?: number } | null>(null);
   // Edit modal state
@@ -239,7 +237,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Brand accent bar */}
       <div className="h-1" style={{ backgroundColor: '#0061FF' }} />
 
@@ -264,6 +262,13 @@ export default function App() {
               style={{ backgroundColor: '#0061FF' }}
             >
               Omzet
+            </button>
+            <button
+              onClick={() => navigate('/kosten')}
+              className="px-4 py-2 text-base rounded hover:opacity-80 text-white"
+              style={{ backgroundColor: '#0061FF' }}
+            >
+              Kosten
             </button>
           </div>
         </div>
@@ -295,11 +300,11 @@ export default function App() {
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto" ref={scrollContainerRef}>
+      <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
         <table className="w-max min-w-full border-collapse text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="sticky left-0 z-10 bg-gray-100 text-left px-3 py-2 border-b border-r min-w-[320px] font-semibold text-gray-700">
+              <th className="sticky left-0 top-0 z-30 bg-gray-100 text-left px-3 py-2 border-b border-r min-w-[320px] font-semibold text-gray-700">
                 Datum
               </th>
               {dagen.map(dag => {
@@ -308,8 +313,8 @@ export default function App() {
                   <th
                     key={dag.getDate()}
                     ref={isToday ? todayRef : undefined}
-                    className={`px-1.5 py-2 border-b text-center min-w-[58px] font-medium ${
-                      isWeekend(dag) ? 'bg-gray-200 text-gray-500' : 'text-gray-700'
+                    className={`sticky top-0 z-20 px-1.5 py-2 border-b text-center min-w-[58px] font-medium ${
+                      isWeekend(dag) ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700'
                     }${isToday ? ' ring-2 ring-inset' : ''}`}
                     style={isToday ? { boxShadow: 'inset 0 0 0 2px #0061FF' } : undefined}
                   >
@@ -318,7 +323,7 @@ export default function App() {
                   </th>
                 );
               })}
-              <th className="sticky right-0 z-10 px-3 py-2 border-b border-l text-center min-w-[72px] font-semibold text-gray-700 bg-gray-100">
+              <th className="sticky right-0 top-0 z-30 px-3 py-2 border-b border-l text-center min-w-[72px] font-semibold text-gray-700 bg-gray-100">
                 Totaal
               </th>
             </tr>
@@ -549,8 +554,8 @@ function ProjectRows({
   return (
     <>
       {/* Project row */}
-      <tr className={`border-b ${inactive ? 'opacity-40' : 'bg-indigo-50/50 hover:bg-indigo-50'}`}>
-        <td className={`sticky left-0 z-10 px-3 py-2 border-r font-semibold text-gray-700 ${inactive ? 'bg-gray-50' : 'bg-indigo-50/50'}`}>
+      <tr className={`border-b ${inactive ? 'opacity-40' : 'bg-indigo-50 hover:bg-indigo-100'}`}>
+        <td className={`sticky left-0 z-10 px-3 py-2 border-r font-semibold text-gray-700 ${inactive ? 'bg-gray-50' : 'bg-indigo-50'}`}>
           <div className="flex items-center gap-1.5 pl-5">
             <button onClick={() => toggleCollapse(projectKey)} className="w-5 text-gray-500 hover:text-gray-700">
               {projectCollapsed ? '▸' : '▾'}

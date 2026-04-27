@@ -1,4 +1,4 @@
-import type { Client, Project, Subproject, TimeEntry, ReportData, RevenueData } from './types';
+import type { Client, Project, Subproject, TimeEntry, ReportData, RevenueData, Cost, CostSummary } from './types';
 
 const BASE = '/api';
 
@@ -64,3 +64,15 @@ export const getReport = (clientId: number, maand: string) =>
   request<ReportData>(`/reports/client/${clientId}?maand=${maand}`);
 export const getRevenue = (jaar: number) =>
   request<RevenueData>(`/reports/revenue?jaar=${jaar}`);
+
+// Costs
+export const getCosts = (jaar?: number) =>
+  request<Cost[]>(jaar ? `/costs?jaar=${jaar}` : '/costs');
+export const createCost = (data: { omschrijving: string; bedrag: number; type: 'eenmalig' | 'maandelijks'; datum: string }) =>
+  request<Cost>('/costs', { method: 'POST', body: JSON.stringify(data) });
+export const updateCost = (id: number, data: Partial<Cost>) =>
+  request<Cost>(`/costs/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteCost = (id: number) =>
+  request(`/costs/${id}`, { method: 'DELETE' });
+export const getCostSummary = (jaar: number) =>
+  request<CostSummary>(`/costs/summary/${jaar}`);

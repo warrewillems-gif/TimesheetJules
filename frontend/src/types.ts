@@ -61,3 +61,26 @@ export interface RevenueData {
   clients: RevenueClient[];
   totaalUren: number;
 }
+
+export interface Cost {
+  id: number;
+  omschrijving: string;
+  bedrag: number;
+  type: 'eenmalig' | 'maandelijks';
+  datum: string;
+  actief: number;
+}
+
+export interface CostSummaryMonth {
+  eenmalig: number;
+  maandelijks: number;
+  totaal: number;
+}
+
+export interface CostSummary {
+  jaar: number;
+  maanden: Record<string, CostSummaryMonth>;
+  jaarTotaal: number;
+  jaarEenmalig: number;
+  jaarMaandelijks: number;
+}

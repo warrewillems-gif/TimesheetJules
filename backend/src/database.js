@@ -1,8 +1,17 @@
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const DB_PATH = path.join(__dirname, '..', 'timesheet.db');
+// Store the database in the user's home directory so it is never inside the
+// project folder and never accidentally shared/overwritten via ZIP transfers.
+const DB_DIR = path.join(os.homedir(), '.timesheetjules');
+const DB_PATH = path.join(DB_DIR, 'timesheet.db');
+
+// Ensure the data directory exists
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
 
 let db = null;
 
@@ -63,6 +72,17 @@ async function initDatabase() {
       gefactureerdeUren REAL NOT NULL DEFAULT 0,
       FOREIGN KEY (subprojectId) REFERENCES subprojects(id),
       UNIQUE(subprojectId, datum)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS costs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      omschrijving TEXT NOT NULL,
+      bedrag REAL NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('eenmalig', 'maandelijks')),
+      datum TEXT NOT NULL,
+      actief INTEGER NOT NULL DEFAULT 1
     )
   `);
 

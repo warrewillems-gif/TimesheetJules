@@ -6,6 +6,7 @@ const projectRoutes = require('./routes/projects');
 const subprojectRoutes = require('./routes/subprojects');
 const timeEntryRoutes = require('./routes/timeEntries');
 const reportRoutes = require('./routes/reports');
+const costRoutes = require('./routes/costs');
 
 const app = express();
 const PORT = 3001;
@@ -26,6 +27,7 @@ async function start() {
   app.use('/api/subprojects', subprojectRoutes);
   app.use('/api/time-entries', timeEntryRoutes);
   app.use('/api/reports', reportRoutes);
+  app.use('/api/costs', costRoutes);
 
   app.listen(PORT, () => {
     console.log(`Backend draait op http://localhost:${PORT}`);
