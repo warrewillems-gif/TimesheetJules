@@ -47,12 +47,15 @@ router.delete('/:id/permanent', (req, res) => {
   const project = queryGet(req.db, 'SELECT * FROM projects WHERE id = ?', [Number(id)]);
   if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
 
-  const subs = queryAll(req.db, 'SELECT id FROM subprojects WHERE projectId = ?', [Number(id)]);
-  for (const s of subs) {
-    runSql(req.db, 'DELETE FROM time_entries WHERE subprojectId = ?', [s.id]);
-  }
-  runSql(req.db, 'DELETE FROM subprojects WHERE projectId = ?', [Number(id)]);
-  runSql(req.db, 'DELETE FROM projects WHERE id = ?', [Number(id)]);
+  const deleteAll = req.db.transaction(() => {
+    const subs = queryAll(req.db, 'SELECT id FROM subprojects WHERE projectId = ?', [Number(id)]);
+    for (const s of subs) {
+      runSql(req.db, 'DELETE FROM time_entries WHERE subprojectId = ?', [s.id]);
+    }
+    runSql(req.db, 'DELETE FROM subprojects WHERE projectId = ?', [Number(id)]);
+    runSql(req.db, 'DELETE FROM projects WHERE id = ?', [Number(id)]);
+  });
+  deleteAll();
   res.json({ success: true });
 });
 

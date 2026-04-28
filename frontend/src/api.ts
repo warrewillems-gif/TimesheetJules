@@ -1,4 +1,4 @@
-import type { Client, Project, Subproject, TimeEntry, ReportData, RevenueData, Cost, CostSummary } from './types';
+import type { Client, Project, Subproject, TimeEntry, ReportData, RevenueData, Cost, CostSummary, HierarchyResponse } from './types';
 
 const BASE = '/api';
 
@@ -16,6 +16,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 // Clients
 export const getClients = () => request<Client[]>('/clients');
+export const getHierarchy = (maand: string) =>
+  request<HierarchyResponse>(`/clients/hierarchy?maand=${maand}`);
 export const createClient = (naam: string) =>
   request<Client>('/clients', { method: 'POST', body: JSON.stringify({ naam }) });
 export const updateClient = (id: number, data: Partial<Client>) =>
@@ -76,3 +78,9 @@ export const deleteCost = (id: number) =>
   request(`/costs/${id}`, { method: 'DELETE' });
 export const getCostSummary = (jaar: number) =>
   request<CostSummary>(`/costs/summary/${jaar}`);
+
+// Settings
+export const getUurtarief = () =>
+  request<{ uurtarief: number }>('/settings/uurtarief');
+export const updateUurtarief = (uurtarief: number) =>
+  request<{ uurtarief: number }>('/settings/uurtarief', { method: 'PUT', body: JSON.stringify({ uurtarief }) });

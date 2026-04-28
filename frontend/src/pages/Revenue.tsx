@@ -1,18 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import type { RevenueData } from '../types';
 import * as api from '../api';
 import { getMaandNaam } from '../utils';
+import Layout from '../components/Layout';
+import { showToast } from '../components/Toast';
 
-const UURTARIEF = 35;
 const MAANDEN = Array.from({ length: 12 }, (_, i) => i);
 
 export default function Revenue() {
-  const navigate = useNavigate();
   const now = new Date();
   const [jaar, setJaar] = useState(now.getFullYear());
   const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uurtarief, setUurtarief] = useState(35);
+
+  useEffect(() => {
+    api.getUurtarief().then(d => setUurtarief(d.uurtarief)).catch(() => {});
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -20,12 +24,12 @@ export default function Revenue() {
       const result = await api.getRevenue(jaar);
       setData(result);
     } catch (err) {
+      showToast('Fout bij laden omzet', 'error');
       console.error('Fout bij laden omzet:', err);
     }
     setLoading(false);
   };
 
-  // Helper: format maand key like "2026-03" to month index
   const maandKey = (m: number) =>
     `${jaar}-${String(m + 1).padStart(2, '0')}`;
 
@@ -35,7 +39,6 @@ export default function Revenue() {
   const formatUren = (uren: number) =>
     `${parseFloat(uren.toFixed(2))}u`;
 
-  // Compute monthly totals across all clients
   const maandTotalen = MAANDEN.map(m => {
     if (!data) return 0;
     const key = maandKey(m);
@@ -43,23 +46,9 @@ export default function Revenue() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b no-print">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Omzetoverzicht</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="px-3 py-1.5 text-sm text-white rounded hover:opacity-80"
-            style={{ backgroundColor: '#0061FF' }}
-          >
-            ← Terug
-          </button>
-        </div>
-      </header>
-
+    <Layout>
       {/* Filters */}
-      <div className="no-print max-w-6xl mx-auto px-4 py-4">
+      <div className="no-print max-w-6xl mx-auto px-4 py-4 w-full">
         <div className="bg-white rounded-lg shadow p-4 flex items-end gap-4 flex-wrap">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Jaar</label>
@@ -91,12 +80,12 @@ export default function Revenue() {
 
       {/* Revenue table */}
       {data && (
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 overflow-auto flex-1">
           <div className="bg-white rounded-lg shadow p-8 print:shadow-none print:p-0">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">
               Omzetoverzicht {jaar}
             </h2>
-            <p className="text-sm text-gray-500 mb-6">Uurtarief: €{UURTARIEF}/uur</p>
+            <p className="text-sm text-gray-500 mb-6">Uurtarief: €{uurtarief}/uur</p>
 
             {data.clients.length === 0 ? (
               <p className="text-gray-400 italic">Geen gefactureerde uren voor {jaar}.</p>
@@ -122,18 +111,17 @@ export default function Revenue() {
                           const uren = client.maanden[maandKey(m)] || 0;
                           return (
                             <td key={m} className="text-right py-2 px-2 tabular-nums text-gray-600">
-                              {uren > 0 ? formatEuro(uren * UURTARIEF) : '–'}
+                              {uren > 0 ? formatEuro(uren * uurtarief) : '–'}
                             </td>
                           );
                         })}
                         <td className="text-right py-2 pl-4 font-semibold tabular-nums text-gray-800">
-                          {formatEuro(client.totaalUren * UURTARIEF)}
+                          {formatEuro(client.totaalUren * uurtarief)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    {/* Monthly uren totals row */}
                     <tr className="border-t border-gray-300">
                       <td className="py-1 pr-4 text-gray-500 font-medium">Uren</td>
                       {MAANDEN.map((m, i) => (
@@ -145,16 +133,15 @@ export default function Revenue() {
                         {formatUren(data.totaalUren)}
                       </td>
                     </tr>
-                    {/* Monthly revenue totals row */}
                     <tr className="border-t-2 border-gray-800">
                       <td className="py-2 pr-4 font-bold text-gray-900">Totaal</td>
                       {MAANDEN.map((m, i) => (
                         <td key={m} className="text-right py-2 px-2 font-bold tabular-nums text-gray-900">
-                          {maandTotalen[i] > 0 ? formatEuro(maandTotalen[i] * UURTARIEF) : '–'}
+                          {maandTotalen[i] > 0 ? formatEuro(maandTotalen[i] * uurtarief) : '–'}
                         </td>
                       ))}
                       <td className="text-right py-2 pl-4 font-bold tabular-nums text-gray-900 text-base">
-                        {formatEuro(data.totaalUren * UURTARIEF)}
+                        {formatEuro(data.totaalUren * uurtarief)}
                       </td>
                     </tr>
                   </tfoot>
@@ -164,6 +151,6 @@ export default function Revenue() {
           </div>
         </div>
       )}
-    </div>
+    </Layout>
   );
 }

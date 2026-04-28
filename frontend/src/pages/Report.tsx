@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Client, ReportData } from '../types';
 import * as api from '../api';
 import { getMaandNaam, formatMaand } from '../utils';
-
-const UURTARIEF = 35;
+import Layout from '../components/Layout';
+import { showToast } from '../components/Toast';
 
 export default function Report() {
-  const navigate = useNavigate();
   const now = new Date();
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | ''>('');
@@ -15,9 +13,11 @@ export default function Report() {
   const [maand, setMaand] = useState(now.getMonth());
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uurtarief, setUurtarief] = useState(35);
 
   useEffect(() => {
-    api.getClients().then(setClients);
+    api.getClients().then(setClients).catch(() => showToast('Fout bij laden clients', 'error'));
+    api.getUurtarief().then(data => setUurtarief(data.uurtarief)).catch(() => {});
   }, []);
 
   const loadReport = async () => {
@@ -27,29 +27,16 @@ export default function Report() {
       const data = await api.getReport(Number(selectedClient), formatMaand(jaar, maand));
       setReport(data);
     } catch (err) {
+      showToast('Fout bij laden rapport', 'error');
       console.error('Fout bij laden rapport:', err);
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b no-print">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Rapportage</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="px-3 py-1.5 text-sm text-white rounded hover:opacity-80"
-            style={{ backgroundColor: '#0061FF' }}
-          >
-            ← Terug
-          </button>
-        </div>
-      </header>
-
+    <Layout>
       {/* Filters */}
-      <div className="no-print max-w-4xl mx-auto px-4 py-4">
+      <div className="no-print max-w-4xl mx-auto px-4 py-4 w-full">
         <div className="bg-white rounded-lg shadow p-4 flex items-end gap-4 flex-wrap">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
@@ -106,7 +93,7 @@ export default function Report() {
 
       {/* Report */}
       {report && (
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4 overflow-auto flex-1">
           <div className="bg-white rounded-lg shadow p-8 print:shadow-none print:p-0">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">
               Rapport: {getMaandNaam(maand)} {jaar}
@@ -119,24 +106,24 @@ export default function Report() {
               ) : (
                 <>
                   {report.projecten.map(project => {
-                    const projectBedrag = parseFloat((project.totaal * UURTARIEF).toFixed(2));
+                    const projectBedrag = parseFloat((project.totaal * uurtarief).toFixed(2));
                     return (
                       <div key={project.id} className="mb-4">
                         <div className="flex justify-between items-baseline py-1">
                           <span className="font-semibold text-gray-800">{project.naam}</span>
                           <span className="font-semibold text-gray-800 tabular-nums">
-                            {parseFloat(project.totaal.toFixed(2))}u x €{UURTARIEF} = €{projectBedrag}
+                            {parseFloat(project.totaal.toFixed(2))}u x €{uurtarief} = €{projectBedrag}
                           </span>
                         </div>
                         {project.subprojecten.map((sub, i) => {
-                          const subBedrag = parseFloat((sub.totaal * UURTARIEF).toFixed(2));
+                          const subBedrag = parseFloat((sub.totaal * uurtarief).toFixed(2));
                           return (
                             <div key={sub.id} className="flex justify-between items-baseline py-0.5 pl-6">
                               <span className="text-gray-600">
                                 {i === project.subprojecten.length - 1 ? '└' : '├'} {sub.naam}
                               </span>
                               <span className="text-gray-600 tabular-nums">
-                                {parseFloat(sub.totaal.toFixed(2))}u x €{UURTARIEF} = €{subBedrag}
+                                {parseFloat(sub.totaal.toFixed(2))}u x €{uurtarief} = €{subBedrag}
                               </span>
                             </div>
                           );
@@ -150,7 +137,7 @@ export default function Report() {
                       Totaal {report.client.naam}:
                     </span>
                     <span className="font-bold text-gray-900 text-lg tabular-nums">
-                      {parseFloat(report.totaal.toFixed(2))}u x €{UURTARIEF} = €{parseFloat((report.totaal * UURTARIEF).toFixed(2))}
+                      {parseFloat(report.totaal.toFixed(2))}u x €{uurtarief} = €{parseFloat((report.totaal * uurtarief).toFixed(2))}
                     </span>
                   </div>
                 </>
@@ -159,6 +146,6 @@ export default function Report() {
           </div>
         </div>
       )}
-    </div>
+    </Layout>
   );
 }

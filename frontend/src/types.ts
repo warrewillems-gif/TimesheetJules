@@ -84,3 +84,8 @@ export interface CostSummary {
   jaarEenmalig: number;
   jaarMaandelijks: number;
 }
+
+export interface HierarchyResponse {
+  hierarchy: ClientWithProjects[];
+  entries: TimeEntry[];
+}

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Cost, CostSummary } from '../types';
 import * as api from '../api';
 import { getMaandNaam } from '../utils';
+import Layout from '../components/Layout';
+import { showToast } from '../components/Toast';
 
 const MAANDEN = Array.from({ length: 12 }, (_, i) => i);
 
 export default function Costs() {
-  const navigate = useNavigate();
   const now = new Date();
   const [jaar, setJaar] = useState(now.getFullYear());
   const [costs, setCosts] = useState<Cost[]>([]);
@@ -32,6 +32,7 @@ export default function Costs() {
       setCosts(costsData);
       setSummary(summaryData);
     } catch (err) {
+      showToast('Fout bij laden kosten', 'error');
       console.error('Fout bij laden kosten:', err);
     }
     setLoading(false);
@@ -72,6 +73,7 @@ export default function Costs() {
           type: formType,
           datum: formDatum,
         });
+        showToast('Kost bijgewerkt', 'success');
       } else {
         await api.createCost({
           omschrijving: formOmschrijving,
@@ -79,10 +81,12 @@ export default function Costs() {
           type: formType,
           datum: formDatum,
         });
+        showToast('Kost toegevoegd', 'success');
       }
       resetForm();
       loadData();
     } catch (err) {
+      showToast('Fout bij opslaan kost', 'error');
       console.error('Fout bij opslaan kost:', err);
     }
   };
@@ -91,8 +95,10 @@ export default function Costs() {
     if (!confirm('Weet je zeker dat je deze kost wil verwijderen?')) return;
     try {
       await api.deleteCost(id);
+      showToast('Kost verwijderd', 'success');
       loadData();
     } catch (err) {
+      showToast('Fout bij verwijderen kost', 'error');
       console.error('Fout bij verwijderen kost:', err);
     }
   };
@@ -104,22 +110,8 @@ export default function Costs() {
     `${jaar}-${String(m + 1).padStart(2, '0')}`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b no-print">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Kostenoverzicht</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="px-3 py-1.5 text-sm text-white rounded hover:opacity-80"
-            style={{ backgroundColor: '#0061FF' }}
-          >
-            ← Terug
-          </button>
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-4 py-4 space-y-6">
+    <Layout>
+      <div className="max-w-6xl mx-auto px-4 py-4 space-y-6 overflow-auto flex-1">
         {/* Year selector + add button */}
         <div className="bg-white rounded-lg shadow p-4 flex items-end gap-4 flex-wrap no-print">
           <div>
@@ -232,7 +224,6 @@ export default function Costs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Eenmalig row */}
                   <tr className="border-b border-gray-200">
                     <td className="py-2 pr-4 font-medium text-gray-700">Eenmalig</td>
                     {MAANDEN.map(m => {
@@ -247,7 +238,6 @@ export default function Costs() {
                       {formatEuro(summary.jaarEenmalig)}
                     </td>
                   </tr>
-                  {/* Maandelijks row */}
                   <tr className="border-b border-gray-200">
                     <td className="py-2 pr-4 font-medium text-gray-700">Maandelijks</td>
                     {MAANDEN.map(m => {
@@ -342,6 +332,6 @@ export default function Costs() {
           )}
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

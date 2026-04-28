@@ -1,7 +1,7 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
+const Database = require('better-sqlite3');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
 // Store the database in the user's home directory so it is never inside the
 // project folder and never accidentally shared/overwritten via ZIP transfers.
@@ -13,29 +13,13 @@ if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });
 }
 
-let db = null;
+function initDatabase() {
+  const db = new Database(DB_PATH);
 
-function saveDatabase() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(DB_PATH, buffer);
-  }
-}
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
 
-async function initDatabase() {
-  const SQL = await initSqlJs();
-
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-  } else {
-    db = new SQL.Database();
-  }
-
-  db.run('PRAGMA foreign_keys = ON');
-
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       naam TEXT NOT NULL,
@@ -43,7 +27,7 @@ async function initDatabase() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       clientId INTEGER NOT NULL,
@@ -53,7 +37,7 @@ async function initDatabase() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS subprojects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       projectId INTEGER NOT NULL,
@@ -63,7 +47,7 @@ async function initDatabase() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS time_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       subprojectId INTEGER NOT NULL,
@@ -75,7 +59,7 @@ async function initDatabase() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS costs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       omschrijving TEXT NOT NULL,
@@ -86,35 +70,36 @@ async function initDatabase() {
     )
   `);
 
-  saveDatabase();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
+  // Seed default hourly rate if not set
+  const existing = db.prepare('SELECT value FROM settings WHERE key = ?').get('uurtarief');
+  if (!existing) {
+    db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('uurtarief', '35');
+  }
+
   return db;
 }
 
 // Helper: run query and return rows as array of objects
 function queryAll(db, sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows;
+  return db.prepare(sql).all(...params);
 }
 
 // Helper: run query and return first row as object or undefined
 function queryGet(db, sql, params = []) {
-  const rows = queryAll(db, sql, params);
-  return rows.length > 0 ? rows[0] : undefined;
+  return db.prepare(sql).get(...params);
 }
 
 // Helper: run INSERT/UPDATE/DELETE and return { changes, lastInsertRowid }
 function runSql(db, sql, params = []) {
-  db.run(sql, params);
-  const lastId = db.exec('SELECT last_insert_rowid() as id')[0]?.values[0][0];
-  const changes = db.getRowsModified();
-  saveDatabase();
-  return { lastInsertRowid: lastId, changes };
+  const result = db.prepare(sql).run(...params);
+  return { lastInsertRowid: result.lastInsertRowid, changes: result.changes };
 }
 
-module.exports = { initDatabase, queryAll, queryGet, runSql, saveDatabase };
+module.exports = { initDatabase, queryAll, queryGet, runSql };

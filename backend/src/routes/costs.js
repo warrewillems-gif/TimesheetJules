@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
 // GET cost by id
 router.get('/:id', (req, res) => {
   try {
-    const row = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [req.params.id]);
+    const row = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [Number(req.params.id)]);
     if (!row) return res.status(404).json({ error: 'Kost niet gevonden' });
     res.json(row);
   } catch (err) {
@@ -55,7 +55,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { omschrijving, bedrag, type, datum, actief } = req.body;
-    const existing = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [req.params.id]);
+    const existing = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [Number(req.params.id)]);
     if (!existing) return res.status(404).json({ error: 'Kost niet gevonden' });
 
     const newOmschrijving = omschrijving ?? existing.omschrijving;
@@ -71,9 +71,9 @@ router.put('/:id', (req, res) => {
     runSql(
       req.db,
       `UPDATE costs SET omschrijving = ?, bedrag = ?, type = ?, datum = ?, actief = ? WHERE id = ?`,
-      [newOmschrijving, newBedrag, newType, newDatum, newActief, req.params.id]
+      [newOmschrijving, newBedrag, newType, newDatum, newActief, Number(req.params.id)]
     );
-    const row = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [req.params.id]);
+    const row = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [Number(req.params.id)]);
     res.json(row);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,9 +83,9 @@ router.put('/:id', (req, res) => {
 // DELETE cost
 router.delete('/:id', (req, res) => {
   try {
-    const existing = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [req.params.id]);
+    const existing = queryGet(req.db, `SELECT * FROM costs WHERE id = ?`, [Number(req.params.id)]);
     if (!existing) return res.status(404).json({ error: 'Kost niet gevonden' });
-    runSql(req.db, `DELETE FROM costs WHERE id = ?`, [req.params.id]);
+    runSql(req.db, `DELETE FROM costs WHERE id = ?`, [Number(req.params.id)]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -116,13 +116,11 @@ router.get('/summary/:jaar', (req, res) => {
           maanden[costMonth].totaal += cost.bedrag;
         }
       } else if (cost.type === 'maandelijks') {
-        // Monthly/subscription costs: apply from their start date onwards
-        const startDate = cost.datum; // "YYYY-MM-DD"
+        // Monthly/subscription costs: apply from their start month onwards
+        const startMonth = cost.datum.substring(0, 7); // "YYYY-MM"
         for (let m = 1; m <= 12; m++) {
           const key = `${jaar}-${String(m).padStart(2, '0')}`;
-          // Last day of this month for comparison
-          const monthEnd = `${key}-31`;
-          if (startDate <= monthEnd) {
+          if (startMonth <= key) {
             maanden[key].maandelijks += cost.bedrag;
             maanden[key].totaal += cost.bedrag;
           }
