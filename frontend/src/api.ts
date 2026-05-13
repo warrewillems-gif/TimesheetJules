@@ -18,8 +18,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 export const getClients = () => request<Client[]>('/clients');
 export const getHierarchy = (maand: string) =>
   request<HierarchyResponse>(`/clients/hierarchy?maand=${maand}`);
-export const createClient = (naam: string) =>
-  request<Client>('/clients', { method: 'POST', body: JSON.stringify({ naam }) });
+export const createClient = (naam: string, uurtarief?: number) =>
+  request<Client>('/clients', { method: 'POST', body: JSON.stringify({ naam, ...(uurtarief !== undefined && { uurtarief }) }) });
 export const updateClient = (id: number, data: Partial<Client>) =>
   request<Client>(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteClient = (id: number) =>

@@ -13,11 +13,9 @@ export default function Report() {
   const [maand, setMaand] = useState(now.getMonth());
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uurtarief, setUurtarief] = useState(35);
 
   useEffect(() => {
     api.getClients().then(setClients).catch(() => showToast('Fout bij laden clients', 'error'));
-    api.getUurtarief().then(data => setUurtarief(data.uurtarief)).catch(() => {});
   }, []);
 
   const loadReport = async () => {
@@ -106,24 +104,25 @@ export default function Report() {
               ) : (
                 <>
                   {report.projecten.map(project => {
-                    const projectBedrag = parseFloat((project.totaal * uurtarief).toFixed(2));
+                    const rate = report.uurtarief ?? 0;
+                    const projectBedrag = parseFloat((project.totaal * rate).toFixed(2));
                     return (
                       <div key={project.id} className="mb-4">
                         <div className="flex justify-between items-baseline py-1">
                           <span className="font-semibold text-gray-800">{project.naam}</span>
                           <span className="font-semibold text-gray-800 tabular-nums">
-                            {parseFloat(project.totaal.toFixed(2))}u x €{uurtarief} = €{projectBedrag}
+                            {parseFloat(project.totaal.toFixed(2))}u x €{rate} = €{projectBedrag}
                           </span>
                         </div>
                         {project.subprojecten.map((sub, i) => {
-                          const subBedrag = parseFloat((sub.totaal * uurtarief).toFixed(2));
+                          const subBedrag = parseFloat((sub.totaal * rate).toFixed(2));
                           return (
                             <div key={sub.id} className="flex justify-between items-baseline py-0.5 pl-6">
                               <span className="text-gray-600">
                                 {i === project.subprojecten.length - 1 ? '└' : '├'} {sub.naam}
                               </span>
                               <span className="text-gray-600 tabular-nums">
-                                {parseFloat(sub.totaal.toFixed(2))}u x €{uurtarief} = €{subBedrag}
+                                {parseFloat(sub.totaal.toFixed(2))}u x €{rate} = €{subBedrag}
                               </span>
                             </div>
                           );
@@ -137,7 +136,7 @@ export default function Report() {
                       Totaal {report.client.naam}:
                     </span>
                     <span className="font-bold text-gray-900 text-lg tabular-nums">
-                      {parseFloat(report.totaal.toFixed(2))}u x €{uurtarief} = €{parseFloat((report.totaal * uurtarief).toFixed(2))}
+                      {parseFloat(report.totaal.toFixed(2))}u x €{report.uurtarief ?? 0} = €{parseFloat((report.totaal * (report.uurtarief ?? 0)).toFixed(2))}
                     </span>
                   </div>
                 </>

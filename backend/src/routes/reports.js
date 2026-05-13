@@ -20,8 +20,16 @@ router.get('/client/:id', (req, res) => {
     [Number(id)]
   );
 
+  // Fall back to global rate if client has no uurtarief
+  let tarief = client.uurtarief;
+  if (tarief == null) {
+    const setting = queryGet(req.db, 'SELECT value FROM settings WHERE key = ?', ['uurtarief']);
+    tarief = setting ? Number(setting.value) : 35;
+  }
+
   const report = {
     client: { id: client.id, naam: client.naam },
+    uurtarief: tarief,
     maand,
     projecten: [],
     totaal: 0,
@@ -77,7 +85,7 @@ router.get('/revenue', (req, res) => {
 
   // Per client per month
   const rows = queryAll(req.db, `
-    SELECT c.id as clientId, c.naam as clientNaam,
+    SELECT c.id as clientId, c.naam as clientNaam, c.uurtarief as clientUurtarief,
            substr(te.datum, 1, 7) as maand,
            COALESCE(SUM(te.gefactureerdeUren), 0) as uren
     FROM time_entries te
@@ -93,11 +101,16 @@ router.get('/revenue', (req, res) => {
   const clientsMap = {};
   let jaarTotaalUren = 0;
 
+  // Get global default rate for fallback
+  const globalSetting = queryGet(req.db, 'SELECT value FROM settings WHERE key = ?', ['uurtarief']);
+  const globalRate = globalSetting ? Number(globalSetting.value) : 35;
+
   for (const row of rows) {
     if (!clientsMap[row.clientId]) {
       clientsMap[row.clientId] = {
         id: row.clientId,
         naam: row.clientNaam,
+        uurtarief: row.clientUurtarief != null ? row.clientUurtarief : globalRate,
         maanden: {},
         totaalUren: 0,
       };

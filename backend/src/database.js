@@ -23,9 +23,17 @@ function initDatabase() {
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       naam TEXT NOT NULL,
-      actief INTEGER NOT NULL DEFAULT 1
+      actief INTEGER NOT NULL DEFAULT 1,
+      uurtarief REAL
     )
   `);
+
+  // Migration: add uurtarief column if missing (existing databases)
+  const columns = db.prepare("PRAGMA table_info(clients)").all();
+  const hasUurtarief = columns.some(col => col.name === 'uurtarief');
+  if (!hasUurtarief) {
+    db.exec('ALTER TABLE clients ADD COLUMN uurtarief REAL');
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
@@ -82,6 +90,11 @@ function initDatabase() {
   if (!existing) {
     db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('uurtarief', '35');
   }
+
+  // Backfill: set uurtarief on existing clients that don't have one
+  const globalRate = db.prepare('SELECT value FROM settings WHERE key = ?').get('uurtarief');
+  const defaultRate = globalRate ? Number(globalRate.value) : 35;
+  db.prepare('UPDATE clients SET uurtarief = ? WHERE uurtarief IS NULL').run(defaultRate);
 
   return db;
 }

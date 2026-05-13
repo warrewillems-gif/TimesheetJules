@@ -2,6 +2,7 @@ export interface Client {
   id: number;
   naam: string;
   actief: number;
+  uurtarief: number;
 }
 
 export interface Project {
@@ -30,6 +31,7 @@ export interface TimeEntry {
 
 export interface ReportData {
   client: { id: number; naam: string };
+  uurtarief: number;
   maand: string;
   projecten: {
     id: number;
@@ -52,6 +54,7 @@ export interface ProjectWithSubprojects extends Project {
 export interface RevenueClient {
   id: number;
   naam: string;
+  uurtarief: number;
   maanden: Record<string, number>;
   totaalUren: number;
 }

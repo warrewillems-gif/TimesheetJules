@@ -17,7 +17,7 @@ export default function SubprojectRows({
   getSubprojectTotal: (id: number, field: 'werkelijkeUren' | 'gefactureerdeUren') => number;
   handleSaveEntry: (subprojectId: number, datum: string, field: 'werkelijkeUren' | 'gefactureerdeUren', value: number) => void;
   formatNum: (n: number) => string;
-  setEditModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null) => void;
+  setEditModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string; uurtarief?: number } | null) => void;
   handleDeactivate: (type: 'client' | 'project' | 'subproject', id: number) => void;
   handleReactivate: (type: 'client' | 'project' | 'subproject', id: number) => void;
   setDeleteModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null) => void;

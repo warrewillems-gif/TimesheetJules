@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { RevenueData } from '../types';
 import * as api from '../api';
 import { getMaandNaam } from '../utils';
@@ -12,11 +12,6 @@ export default function Revenue() {
   const [jaar, setJaar] = useState(now.getFullYear());
   const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uurtarief, setUurtarief] = useState(35);
-
-  useEffect(() => {
-    api.getUurtarief().then(d => setUurtarief(d.uurtarief)).catch(() => {});
-  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -42,7 +37,7 @@ export default function Revenue() {
   const maandTotalen = MAANDEN.map(m => {
     if (!data) return 0;
     const key = maandKey(m);
-    return data.clients.reduce((sum, c) => sum + (c.maanden[key] || 0), 0);
+    return data.clients.reduce((sum, c) => sum + (c.maanden[key] || 0) * (c.uurtarief ?? 0), 0);
   });
 
   return (
@@ -85,7 +80,7 @@ export default function Revenue() {
             <h2 className="text-2xl font-bold text-gray-800 mb-1">
               Omzetoverzicht {jaar}
             </h2>
-            <p className="text-sm text-gray-500 mb-6">Uurtarief: €{uurtarief}/uur</p>
+            <p className="text-sm text-gray-500 mb-6">Uurtarief per client</p>
 
             {data.clients.length === 0 ? (
               <p className="text-gray-400 italic">Geen gefactureerde uren voor {jaar}.</p>
@@ -95,6 +90,7 @@ export default function Revenue() {
                   <thead>
                     <tr className="border-b-2 border-gray-800">
                       <th className="text-left py-2 pr-4 font-semibold text-gray-800">Client</th>
+                      <th className="text-right py-2 px-2 font-semibold text-gray-800 whitespace-nowrap">€/u</th>
                       {MAANDEN.map(m => (
                         <th key={m} className="text-right py-2 px-2 font-semibold text-gray-800 whitespace-nowrap">
                           {getMaandNaam(m).substring(0, 3)}
@@ -107,16 +103,17 @@ export default function Revenue() {
                     {data.clients.map(client => (
                       <tr key={client.id} className="border-b border-gray-200">
                         <td className="py-2 pr-4 font-medium text-gray-700">{client.naam}</td>
+                        <td className="text-right py-2 px-2 tabular-nums text-gray-500 text-xs">€{client.uurtarief ?? 0}</td>
                         {MAANDEN.map(m => {
                           const uren = client.maanden[maandKey(m)] || 0;
                           return (
                             <td key={m} className="text-right py-2 px-2 tabular-nums text-gray-600">
-                              {uren > 0 ? formatEuro(uren * uurtarief) : '–'}
+                              {uren > 0 ? formatEuro(uren * (client.uurtarief ?? 0)) : '–'}
                             </td>
                           );
                         })}
                         <td className="text-right py-2 pl-4 font-semibold tabular-nums text-gray-800">
-                          {formatEuro(client.totaalUren * uurtarief)}
+                          {formatEuro(client.totaalUren * (client.uurtarief ?? 0))}
                         </td>
                       </tr>
                     ))}
@@ -124,24 +121,30 @@ export default function Revenue() {
                   <tfoot>
                     <tr className="border-t border-gray-300">
                       <td className="py-1 pr-4 text-gray-500 font-medium">Uren</td>
-                      {MAANDEN.map((m, i) => (
-                        <td key={m} className="text-right py-1 px-2 tabular-nums text-gray-500">
-                          {maandTotalen[i] > 0 ? formatUren(maandTotalen[i]) : '–'}
-                        </td>
-                      ))}
+                      <td></td>
+                      {MAANDEN.map((m, i) => {
+                        const key = maandKey(m);
+                        const urenTotaal = data.clients.reduce((sum, c) => sum + (c.maanden[key] || 0), 0);
+                        return (
+                          <td key={m} className="text-right py-1 px-2 tabular-nums text-gray-500">
+                            {urenTotaal > 0 ? formatUren(urenTotaal) : '–'}
+                          </td>
+                        );
+                      })}
                       <td className="text-right py-1 pl-4 font-semibold tabular-nums text-gray-700">
                         {formatUren(data.totaalUren)}
                       </td>
                     </tr>
                     <tr className="border-t-2 border-gray-800">
                       <td className="py-2 pr-4 font-bold text-gray-900">Totaal</td>
+                      <td></td>
                       {MAANDEN.map((m, i) => (
                         <td key={m} className="text-right py-2 px-2 font-bold tabular-nums text-gray-900">
-                          {maandTotalen[i] > 0 ? formatEuro(maandTotalen[i] * uurtarief) : '–'}
+                          {maandTotalen[i] > 0 ? formatEuro(maandTotalen[i]) : '–'}
                         </td>
                       ))}
                       <td className="text-right py-2 pl-4 font-bold tabular-nums text-gray-900 text-base">
-                        {formatEuro(data.totaalUren * uurtarief)}
+                        {formatEuro(data.clients.reduce((sum, c) => sum + c.totaalUren * (c.uurtarief ?? 0), 0))}
                       </td>
                     </tr>
                   </tfoot>

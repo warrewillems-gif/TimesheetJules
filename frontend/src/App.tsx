@@ -34,7 +34,7 @@ export default function App() {
   // Add modal state
   const [addModal, setAddModal] = useState<{ type: 'client' | 'project' | 'subproject'; parentId?: number } | null>(null);
   // Edit modal state
-  const [editModal, setEditModal] = useState<{ type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null>(null);
+  const [editModal, setEditModal] = useState<{ type: 'client' | 'project' | 'subproject'; id: number; naam: string; uurtarief?: number } | null>(null);
   // Delete confirm modal state
   const [deleteModal, setDeleteModal] = useState<{ type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null>(null);
 
@@ -158,11 +158,11 @@ export default function App() {
     return total;
   };
 
-  const handleAdd = async (naam: string) => {
+  const handleAdd = async (naam: string, uurtarief?: number) => {
     if (!addModal) return;
     try {
       if (addModal.type === 'client') {
-        await api.createClient(naam);
+        await api.createClient(naam, uurtarief);
       } else if (addModal.type === 'project') {
         await api.createProject(addModal.parentId!, naam);
       } else {
@@ -177,11 +177,11 @@ export default function App() {
     }
   };
 
-  const handleEdit = async (naam: string) => {
+  const handleEdit = async (naam: string, uurtarief?: number) => {
     if (!editModal) return;
     try {
       if (editModal.type === 'client') {
-        await api.updateClient(editModal.id, { naam });
+        await api.updateClient(editModal.id, { naam, ...(uurtarief !== undefined && { uurtarief }) } as any);
       } else if (editModal.type === 'project') {
         await api.updateProject(editModal.id, { naam });
       } else {
@@ -285,7 +285,7 @@ export default function App() {
         </button>
 
         {/* Hourly rate */}
-        <div className="ml-4 flex items-center gap-1.5 text-sm text-gray-500">
+        <div className="ml-4 flex items-center gap-1.5 text-sm text-gray-500" title="Standaard uurtarief voor nieuwe clients">
           <span>€</span>
           {editingRate ? (
             <input
@@ -302,12 +302,12 @@ export default function App() {
             <span
               className="cursor-pointer hover:underline tabular-nums"
               onClick={() => { setRateText(String(uurtarief)); setEditingRate(true); }}
-              title="Klik om uurtarief te wijzigen"
+              title="Standaard uurtarief voor nieuwe clients"
             >
               {uurtarief}
             </span>
           )}
-          <span>/uur</span>
+          <span>/uur <span className="text-xs text-gray-400">(standaard)</span></span>
         </div>
 
         <div className="ml-auto">
@@ -395,12 +395,14 @@ export default function App() {
           type={addModal.type}
           onSave={handleAdd}
           onClose={() => setAddModal(null)}
+          defaultUurtarief={uurtarief}
         />
       )}
       {editModal && (
         <EditNameModal
           type={editModal.type}
           currentName={editModal.naam}
+          currentUurtarief={editModal.uurtarief}
           onSave={handleEdit}
           onClose={() => setEditModal(null)}
         />

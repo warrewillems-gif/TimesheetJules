@@ -49,11 +49,28 @@ router.get('/', (req, res) => {
 
 // POST /api/clients - Nieuwe client aanmaken
 router.post('/', (req, res) => {
-  const { naam } = req.body;
+  const { naam, uurtarief } = req.body;
   if (!naam || !naam.trim()) {
     return res.status(400).json({ error: 'Naam is verplicht' });
   }
-  const result = runSql(req.db, 'INSERT INTO clients (naam) VALUES (?)', [naam.trim()]);
+
+  // Validate uurtarief if provided
+  if (uurtarief !== undefined) {
+    if (isNaN(Number(uurtarief)) || Number(uurtarief) < 0) {
+      return res.status(400).json({ error: 'Uurtarief moet een positief getal zijn' });
+    }
+  }
+
+  // Use provided rate or fall back to global default
+  let rate;
+  if (uurtarief !== undefined) {
+    rate = Number(uurtarief);
+  } else {
+    const setting = queryGet(req.db, 'SELECT value FROM settings WHERE key = ?', ['uurtarief']);
+    rate = setting ? Number(setting.value) : 35;
+  }
+
+  const result = runSql(req.db, 'INSERT INTO clients (naam, uurtarief) VALUES (?, ?)', [naam.trim(), rate]);
   const client = queryGet(req.db, 'SELECT * FROM clients WHERE id = ?', [result.lastInsertRowid]);
   res.status(201).json(client);
 });
@@ -61,14 +78,22 @@ router.post('/', (req, res) => {
 // PUT /api/clients/:id - Client bewerken
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const { naam, actief } = req.body;
+  const { naam, actief, uurtarief } = req.body;
   const client = queryGet(req.db, 'SELECT * FROM clients WHERE id = ?', [Number(id)]);
   if (!client) return res.status(404).json({ error: 'Client niet gevonden' });
 
+  // Validate uurtarief if provided
+  if (uurtarief !== undefined) {
+    if (isNaN(Number(uurtarief)) || Number(uurtarief) < 0) {
+      return res.status(400).json({ error: 'Uurtarief moet een positief getal zijn' });
+    }
+  }
+
   const newNaam = naam !== undefined ? naam.trim() : client.naam;
   const newActief = actief !== undefined ? (actief ? 1 : 0) : client.actief;
+  const newUurtarief = uurtarief !== undefined ? Number(uurtarief) : client.uurtarief;
 
-  runSql(req.db, 'UPDATE clients SET naam = ?, actief = ? WHERE id = ?', [newNaam, newActief, Number(id)]);
+  runSql(req.db, 'UPDATE clients SET naam = ?, actief = ?, uurtarief = ? WHERE id = ?', [newNaam, newActief, newUurtarief, Number(id)]);
   const updated = queryGet(req.db, 'SELECT * FROM clients WHERE id = ?', [Number(id)]);
   res.json(updated);
 });

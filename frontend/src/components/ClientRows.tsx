@@ -23,7 +23,7 @@ export default function ClientRows({
   handleSaveEntry: (subprojectId: number, datum: string, field: 'werkelijkeUren' | 'gefactureerdeUren', value: number) => void;
   formatNum: (n: number) => string;
   setAddModal: (v: { type: 'client' | 'project' | 'subproject'; parentId?: number } | null) => void;
-  setEditModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null) => void;
+  setEditModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string; uurtarief?: number } | null) => void;
   handleDeactivate: (type: 'client' | 'project' | 'subproject', id: number) => void;
   handleReactivate: (type: 'client' | 'project' | 'subproject', id: number) => void;
   setDeleteModal: (v: { type: 'client' | 'project' | 'subproject'; id: number; naam: string } | null) => void;
@@ -42,10 +42,11 @@ export default function ClientRows({
             </button>
             <span
               className="cursor-pointer hover:underline"
-              onClick={() => setEditModal({ type: 'client', id: client.id, naam: client.naam })}
+              onClick={() => setEditModal({ type: 'client', id: client.id, naam: client.naam, uurtarief: client.uurtarief })}
             >
               {client.naam}
             </span>
+            <span className="ml-1 text-xs text-gray-400 tabular-nums" title="Uurtarief">€{client.uurtarief}/u</span>
             {!inactive && (
               <>
                 <button

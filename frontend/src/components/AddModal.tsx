@@ -10,16 +10,25 @@ export default function AddModal({
   type,
   onSave,
   onClose,
+  defaultUurtarief,
 }: {
   type: 'client' | 'project' | 'subproject';
-  onSave: (naam: string) => void;
+  onSave: (naam: string, uurtarief?: number) => void;
   onClose: () => void;
+  defaultUurtarief?: number;
 }) {
   const [naam, setNaam] = useState('');
+  const [rateText, setRateText] = useState(String(defaultUurtarief ?? 35));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (naam.trim()) onSave(naam.trim());
+    if (!naam.trim()) return;
+    if (type === 'client') {
+      const rate = parseFloat(rateText.replace(',', '.'));
+      onSave(naam.trim(), isNaN(rate) || rate < 0 ? undefined : rate);
+    } else {
+      onSave(naam.trim());
+    }
   };
 
   return (
@@ -36,6 +45,19 @@ export default function AddModal({
             style={{ '--tw-ring-color': '#0061FF' } as React.CSSProperties}
             autoFocus
           />
+          {type === 'client' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Uurtarief (€)</label>
+              <input
+                type="text"
+                value={rateText}
+                onChange={e => setRateText(e.target.value)}
+                placeholder="Uurtarief"
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2"
+                style={{ '--tw-ring-color': '#0061FF' } as React.CSSProperties}
+              />
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
               Annuleren
