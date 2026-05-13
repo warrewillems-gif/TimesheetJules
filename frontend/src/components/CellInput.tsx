@@ -44,7 +44,7 @@ export default function CellInput({
 
   if (editing) {
     return (
-      <td className={`border-b p-0 ${weekend ? 'bg-gray-100' : ''}`}>
+      <td className={`border-b px-1.5 py-1 ${weekend ? 'bg-gray-100' : ''}`}>
         <input
           ref={inputRef}
           type="text"
@@ -52,8 +52,8 @@ export default function CellInput({
           onChange={e => setText(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
-          className="w-full h-full px-1 py-1 text-center text-sm outline-none border rounded-sm"
-          style={{ backgroundColor: '#e8f0ff', borderColor: '#0061FF', minWidth: '46px' }}
+          className="w-full h-full text-center text-sm outline-none border rounded-sm"
+          style={{ backgroundColor: '#e8f0ff', borderColor: '#0061FF' }}
         />
       </td>
     );

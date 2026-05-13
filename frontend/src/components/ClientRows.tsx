@@ -101,7 +101,7 @@ export default function ClientRows({
 
       {!clientCollapsed && client.projects.map(project => {
         const projectKey = `p_${project.id}`;
-        const projectCollapsed = collapsed[projectKey];
+        const projectCollapsed = collapsed[projectKey] ?? true;
         const subIds = project.subprojects.map(s => s.id);
         const projectTotal = getProjectTotal(subIds);
 

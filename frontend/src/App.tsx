@@ -119,7 +119,7 @@ export default function App() {
   };
 
   const toggleCollapse = (key: string) => {
-    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+    setCollapsed(prev => ({ ...prev, [key]: !(prev[key] ?? true) }));
   };
 
   const navigeerMaand = (delta: number) => {
@@ -360,7 +360,7 @@ export default function App() {
             )}
             {hierarchy.map(client => {
               const clientKey = `c_${client.id}`;
-              const clientCollapsed = collapsed[clientKey];
+              const clientCollapsed = collapsed[clientKey] ?? true;
               const clientTotal = getClientTotal(client);
 
               return (
